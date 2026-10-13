@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MR DONAS - Gestión de Fábrica</title>
+    <!-- Tailwind CSS for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for interactive bar and pie charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome for pastry and dashboard icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Poppins -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        donutPink: '#FF69B4',
+                        donutLightPink: '#FFE4E1',
+                        donutBrown: '#5C4033',
+                        donutCream: '#FFF8DC',
+                        donutDark: '#2D1B18',
+                        donutAccent: '#FF1493'
+                    },
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #FFF8DC;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #FF69B4;
+            border-radius: 4px;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body class="bg-donutCream text-donutDark font-sans antialiased min-h-screen flex flex-col md:flex-row">
+
+    <!-- Sidebar / Left Navigation -->
+    <aside class="w-full md:w-64 bg-donutBrown text-white flex flex-col justify-between shadow-xl z-20">
+        <div>
+            <!-- Brand Logo Header -->
+            <div class="p-6 flex items-center space-x-3 border-b border-donutBrown/50 bg-[#4A3228]">
+                <div class="w-10 h-10 rounded-full bg-donutPink flex items-center justify-center text-white shadow-lg text-xl font-bold">
+                    <i class="fa-solid fa-cookie-bite"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg tracking-wider text-donutLightPink">MR DONAS</h1>
+                    <p class="text-xs text-pink-300">Fábrica de Donas</p>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="p-4 space-y-2">
+                <button onclick="switchTab('dashboard')" id="btn-dashboard" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all font-medium text-left bg-donutPink text-white shadow-md">
+                    <i class="fa-solid fa-chart-pie w-5"></i>
+                    <span>Dashboard</span>
+                </button>
+                <button onclick="switchTab('ventas')" id="btn-ventas" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all font-medium text-left text-donutLightPink hover:bg-white/10">
+                    <i class="fa-solid fa-cash-register w-5"></i>
+                    <span>Ventas</span>
+                </button>
+                <button onclick="switchTab('compras')" id="btn-compras" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all font-medium text-left text-donutLightPink hover:bg-white/10">
+                    <i class="fa-solid fa-shopping-cart w-5"></i>
+                    <span>Compras</span>
+                </button>
+                <button onclick="switchTab('proveedores')" id="btn-proveedores" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all font-medium text-left text-donutLightPink hover:bg-white/10">
+                    <i class="fa-solid fa-truck-field w-5"></i>
+                    <span>Proveedores</span>
+                </button>
+            </nav>
+        </div>
+
+        <!-- Sidebar Footer Status -->
+        <div class="p-4 border-t border-donutBrown/50 text-xs text-center text-pink-200">
+            <p><i class="fa-solid fa-circle text-green-400 text-[10px] mr-1"></i> Sistema Activo v2.4</p>
+            <p class="mt-1 opacity-75">© 2026 MR DONAS S.A.</p>
+        </div>
+    </aside>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 flex flex-col min-h-screen overflow-y-auto">
+        <!-- Top Bar -->
+        <header class="bg-white shadow-sm px-6 py-4 flex justify-between items-center border-b border-pink-100">
+            <div class="flex items-center space-x-3">
+                <span id="current-tab-title" class="text-xl font-bold text-donutBrown">Dashboard / Inicio</span>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-2 bg-donutLightPink px-3 py-1.5 rounded-full text-donutBrown text-sm font-semibold">
+                    <i class="fa-solid fa-user-shield"></i>
+                    <span>Admin Fábrica</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Notification Banner / Modal Simulation -->
+        <div id="notification" class="hidden mx-6 mt-4 p-4 rounded-xl bg-green-100 border border-green-300 text-green-800 flex items-center justify-between shadow-sm">
+            <span id="notification-text">Registro agregado exitosamente.</span>
+            <button onclick="closeNotification()" class="text-green-900 font-bold">&times;</button>
+        </div>
+
+        <!-- TAB 1: DASHBOARD -->
+        <div id="tab-dashboard" class="tab-content active p-6 space-y-6">
+            <!-- Metrics Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-pink-100 flex items-center space-x-4">
+                    <div class="w-14 h-14 rounded-2xl bg-pink-100 text-donutPink flex items-center justify-center text-2xl shadow-inner">
+                        <i class="fa-solid fa-dollar-sign"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Ventas Totales</p>
+                        <h3 id="stat-total-ventas" class="text-2xl font-bold text-donutBrown">$0.00</h3>
+                        <span class="text-xs text-green-600 font-semibold"><i class="fa-solid fa-arrow-up"></i> +12% este mes</span>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-pink-100 flex items-center space-x-4">
+                    <div class="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-2xl shadow-inner">
+                        <i class="fa-solid fa-cart-shopping"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Compras Insumos</p>
+                        <h3 id="stat-total-compras" class="text-2xl font-bold text-donutBrown">$0.00</h3>
+                        <span class="text-xs text-amber-600 font-semibold"><i class="fa-solid fa-arrow-down"></i> -4% optimizado</span>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-pink-100 flex items-center space-x-4">
+                    <div class="w-14 h-14 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center text-2xl shadow-inner">
+                        <i class="fa-solid fa-boxes-stacked"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Donas Producidas</p>
+                        <h3 class="text-2xl font-bold text-donutBrown">14,250</h3>
+                        <span class="text-xs text-purple-600 font-semibold"><i class="fa-solid fa-fire"></i> Lote activo</span>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-pink-100 flex items-center space-x-4">
+                    <div class="w-14 h-14 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center text-2xl shadow-inner">
+                        <i class="fa-solid fa-truck"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Proveedores</p>
+                        <h3 id="stat-total-proveedores" class="text-2xl font-bold text-donutBrown">0</h3>
+                        <span class="text-xs text-blue-600 font-semibold"><i class="fa-solid fa-check"></i> Activos y al día</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Grid Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Bar Chart: Ventas vs Compras -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-pink-100">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-donutBrown text-lg"><i class="fa-solid fa-chart-column mr-2 text-donutPink"></i>Comparativa Ventas vs Compras</h3>
+                        <span class="text-xs bg-donutLightPink text-donutBrown px-2.5 py-1 rounded-full font-medium">Últimos meses</span>
+                    </div>
+                    <div class="relative h-72">
+                        <canvas id="barChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Pie Chart: Distribución de Insumos / Ventas -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-pink-100">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-donutBrown text-lg"><i class="fa-solid fa-chart-pie mr-2 text-donutPink"></i>Distribución de Ingresos por Tipo de Dona</h3>
+                        <span class="text-xs bg-donutLightPink text-donutBrown px-2.5 py-1 rounded-full font-medium">Porcentaje</span>
+                    </div>
+                    <div class="relative h-72 flex justify-center">
+                        <canvas id="pieChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Summary Panel -->
+            <div class="bg-gradient-to-r from-donutPink to-pink-400 p-6 rounded-2xl text-white shadow-md flex flex-col md:flex-row justify-between items-center">
+                <div class="space-y-2 mb-4 md:mb-0">
+                    <h2 class="text-2xl font-bold">¡Bienvenido a MR DONAS Control Central!</h2>
+                    <p class="text-pink-100 text-sm max-w-xl">Gestiona tus ventas diarias, controla los costos de harina, chocolate y complementos, y mantén alianzas estratégicas con tus proveedores de confianza.</p>
+                </div>
+                <button onclick="switchTab('ventas')" class="bg-white text-donutPink px-6 py-3 rounded-xl font-bold shadow hover:bg-donutLightPink transition-all flex items-center space-x-2">
+                    <i class="fa-solid fa-plus-circle"></i>
+                    <span>Nueva Venta</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- TAB 2: VENTAS -->
+        <div id="tab-ventas" class="tab-content p-6 space-y-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-donutBrown">Gestión de Ventas</h2>
+                    <p class="text-gray-600 text-sm">Registra y visualiza los pedidos de pastelerías, cafeterías y mostrador.</p>
+                </div>
+                <button onclick="openModal('venta')" class="bg-donutPink hover:bg-pink-600 text-white px-5 py-2.5 rounded-xl font-semibold shadow-sm transition-all flex items-center space-x-2">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Registrar Venta</span>
+                </button>
+            </div>
+
+            <!-- Ventas Table -->
+            <div class="bg-white rounded-2xl shadow-sm border border-pink-100 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-donutLightPink/50 text-donutBrown border-b border-pink-100 text-sm">
+                                <th class="p-4 font-semibold">ID Venta</th>
+                                <th class="p-4 font-semibold">Cliente / Punto de Venta</th>
+                                <th class="p-4 font-semibold">Producto (Donas)</th>
+                                <th class="p-4 font-semibold">Cantidad</th>
+                                <th class="p-4 font-semibold">Total</th>
+                                <th class="p-4 font-semibold">Fecha</th>
+                                <th class="p-4 font-semibold text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-ventas-body" class="text-sm divide-y divide-pink-50">
+                            <!-- Dynamic rows inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: COMPRAS -->
+        <div id="tab-compras" class="tab-content p-6 space-y-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-donutBrown">Gestión de Compras (Insumos)</h2>
+                    <p class="text-gray-600 text-sm">Control de materia prima: harina, azúcar, coberturas, aceites y cajas.</p>
+                </div>
+                <button onclick="openModal('compra')" class="bg-donutBrown hover:bg-[#4A3228] text-white px-5 py-2.5 rounded-xl font-semibold shadow-sm transition-all flex items-center space-x-2">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Registrar Compra</span>
+                </button>
+            </div>
+
+            <!-- Compras Table -->
+            <div class="bg-white rounded-2xl shadow-sm border border-pink-100 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-amber-50 text-donutBrown border-b border-pink-100 text-sm">
+                                <th class="p-4 font-semibold">ID Compra</th>
+                                <th class="p-4 font-semibold">Insumo / Material</th>
+                                <th class="p-4 font-semibold">Proveedor</th>
+                                <th class="p-4 font-semibold">Cantidad</th>
+                                <th class="p-4 font-semibold">Costo Total</th>
+                                <th class="p-4 font-semibold">Fecha</th>
+                                <th class="p-4 font-semibold text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-compras-body" class="text-sm divide-y divide-pink-50">
+                            <!-- Dynamic rows inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: PROVEEDORES -->
+        <div id="tab-proveedores" class="tab-content p-6 space-y-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-donutBrown">Directorio de Proveedores</h2>
+                    <p class="text-gray-600 text-sm">Alianzas con proveedores de materias primas y empaques para MR DONAS.</p>
+                </div>
+                <button onclick="openModal('proveedor')" class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-xl font-semibold shadow-sm transition-all flex items-center space-x-2">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span>Nuevo Proveedor</span>
+                </button>
+            </div>
+
+            <!-- Proveedores Table -->
+            <div class="bg-white rounded-2xl shadow-sm border border-pink-100 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-purple-50 text-donutBrown border-b border-pink-100 text-sm">
+                                <th class="p-4 font-semibold">ID</th>
+                                <th class="p-4 font-semibold">Nombre Empresa</th>
+                                <th class="p-4 font-semibold">Insumo Suministrado</th>
+                                <th class="p-4 font-semibold">Teléfono / Contacto</th>
+                                <th class="p-4 font-semibold">Calificación</th>
+                                <th class="p-4 font-semibold text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-proveedores-body" class="text-sm divide-y divide-pink-50">
+                            <!-- Dynamic rows inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Dialog for Creating Records -->
+    <div id="record-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden transform transition-all">
+            <div class="bg-donutBrown text-white px-6 py-4 flex justify-between items-center">
+                <h3 id="modal-title" class="font-bold text-lg">Agregar Registro</h3>
+                <button onclick="closeModal()" class="text-white hover:text-pink-300 text-xl font-bold">&times;</button>
+            </div>
+            <form id="record-form" onsubmit="handleFormSubmit(event)" class="p-6 space-y-4">
+                <input type="hidden" id="form-type" value="">
+                <div id="modal-fields" class="space-y-4">
+                    <!-- Dynamic inputs injected via JS -->
+                </div>
+                <div class="flex justify-end space-x-3 pt-4 border-t border-gray-100">
+                    <button type="button" onclick="closeModal()" class="px-5 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-medium hover:bg-gray-200 transition-all">Cancelar</button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-donutPink text-white font-medium hover:bg-pink-600 shadow-sm transition-all">Guardar Registro</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Application JavaScript -->
+    <script>
+        // Initial Mock Data State
+        let state = {
+            ventas: [
+                { id: 'V-1001', cliente: 'Cafetería Central', producto: 'Donas Glaseadas Tradicionales', cantidad: '120 piezas', total: '$1,800.00', fecha: '2026-06-10' },
+                { id: 'V-1002', cliente: 'Supermercado El Ahorro', producto: 'Surtido Donas Rellenas (Chocolate/Bavaria)', cantidad: '350 piezas', total: '$6,125.00', fecha: '2026-06-11' },
+                { id: 'V-1003', cliente: 'Banquete Bodas San Telmo', producto: 'Mini Donas Gourmet Personalizadas', cantidad: '500 piezas', total: '$9,500.00', fecha: '2026-06-12' }
+            ],
+            compras: [
+                { id: 'C-501', insumo: 'Harina de Trigo Premium (Sacos 50kg)', proveedor: 'Molinos del Norte S.A.', cantidad: '20 sacos', total: '$12,000.00', fecha: '2026-06-02' },
+                { id: 'C-502', insumo: 'Chocolate Calidad Belga para Cobertura', proveedor: 'Cacaos & Co.', cantidad: '80 kg', total: '$14,400.00', fecha: '2026-06-05' },
+                { id: 'C-503', insumo: 'Cajas de Cartón para 12 Donas', proveedor: 'Empaques Ecológicos MX', cantidad: '2,000 pzas', total: '$8,000.00', fecha: '2026-06-08' }
+            ],
+            proveedores: [
+                { id: 'P-01', empresa: 'Molinos del Norte S.A.', insumo: 'Harina y Levadura', contacto: '+52 55 4123 8900', calificacion: '★★★★★' },
+                { id: 'P-02', empresa: 'Cacaos & Co.', insumo: 'Chocolate y Frituras', contacto: '+52 33 8765 4321', calificacion: '★★★★☆' },
+                { id: 'P-03', empresa: 'Empaques Ecológicos MX', insumo: 'Cajas y Servilletas', contacto: '+52 81 2345 6789', calificacion: '★★★★★' },
+                { id: 'P-04', empresa: 'Saborizantes y Colorantes del Bajío', insumo: 'Esencias de Vainilla y Frutilla', contacto: '+52 47 7890 1234', calificacion: '★★★★☆' }
+            ]
+        };
+
+        let barChartInstance = null;
+        let pieChartInstance = null;
+
+        // Navigation Switcher
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+
+            // Reset buttons styling in sidebar
+            const tabs = ['dashboard', 'ventas', 'compras', 'proveedores'];
+            tabs.forEach(t => {
+                const btn = document.getElementById('btn-' + t);
+                if (t === tabId) {
+                    btn.className = "w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all font-medium text-left bg-donutPink text-white shadow-md";
+                } else {
+                    btn.className = "w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all font-medium text-left text-donutLightPink hover:bg-white/10";
+                }
+            });
+
+            // Update Header Title
+            const titles = {
+                dashboard: 'Dashboard / Inicio',
+                ventas: 'Gestión de Ventas',
+                compras: 'Gestión de Compras',
+                proveedores: 'Directorio de Proveedores'
+            };
+            document.getElementById('current-tab-title').innerText = titles[tabId];
+
+            if (tabId === 'dashboard') {
+                updateDashboardMetrics();
+                renderCharts();
+            }
+        }
+
+        // Render Tables
+        function renderTables() {
+            // Ventas
+            const tbodyVentas = document.getElementById('table-ventas-body');
+            tbodyVentas.innerHTML = state.ventas.map((v, index) => `
+                <tr class="hover:bg-pink-50/50 transition-colors">
+                    <td class="p-4 font-semibold text-donutBrown">${v.id}</td>
+                    <td class="p-4">${v.cliente}</td>
+                    <td class="p-4 text-gray-600">${v.producto}</td>
+                    <td class="p-4 font-medium">${v.cantidad}</td>
+                    <td class="p-4 font-bold text-green-700">${v.total}</td>
+                    <td class="p-4 text-gray-500 text-xs">${v.fecha}</td>
+                    <td class="p-4 text-center">
+                        <button onclick="deleteItem('ventas', ${index})" class="text-red-500 hover:text-red-700 p-1 rounded transition"><i class="fa-solid fa-trash-can"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+
+            // Compras
+            const tbodyCompras = document.getElementById('table-compras-body');
+            tbodyCompras.innerHTML = state.compras.map((c, index) => `
+                <tr class="hover:bg-amber-50/50 transition-colors">
+                    <td class="p-4 font-semibold text-donutBrown">${c.id}</td>
+                    <td class="p-4 font-medium">${c.insumo}</td>
+                    <td class="p-4 text-gray-600">${c.proveedor}</td>
+                    <td class="p-4">${c.cantidad}</td>
+                    <td class="p-4 font-bold text-amber-800">${c.total}</td>
+                    <td class="p-4 text-gray-500 text-xs">${c.fecha}</td>
+                    <td class="p-4 text-center">
+                        <button onclick="deleteItem('compras', ${index})" class="text-red-500 hover:text-red-700 p-1 rounded transition"><i class="fa-solid fa-trash-can"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+
+            // Proveedores
+            const tbodyProveedores = document.getElementById('table-proveedores-body');
+            tbodyProveedores.innerHTML = state.proveedores.map((p, index) => `
+                <tr class="hover:bg-purple-50/50 transition-colors">
+                    <td class="p-4 font-semibold text-donutBrown">${p.id}</td>
+                    <td class="p-4 font-bold">${p.empresa}</td>
+                    <td class="p-4 text-gray-600">${p.insumo}</td>
+                    <td class="p-4">${p.contacto}</td>
+                    <td class="p-4 text-amber-500">${p.calificacion}</td>
+                    <td class="p-4 text-center">
+                        <button onclick="deleteItem('proveedores', ${index})" class="text-red-500 hover:text-red-700 p-1 rounded transition"><i class="fa-solid fa-trash-can"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+
+            updateDashboardMetrics();
+        }
+
+        // Update Dashboard Cards Numbers
+        function updateDashboardMetrics() {
+            document.getElementById('stat-total-proveedores').innerText = state.proveedores.length;
+            // Calculate sum of ventas
+            let sumVentas = state.ventas.reduce((acc, curr) => {
+                let num = parseFloat(curr.total.replace('$', '').replace(',', ''));
+                return acc + (isNaN(num) ? 0 : num);
+            }, 0);
+            document.getElementById('stat-total-ventas').innerText = '$' + sumVentas.toLocaleString('en-US', {minimumFractionDigits: 2});
+
+            // Calculate sum of compras
+            let sumCompras = state.compras.reduce((acc, curr) => {
+                let num = parseFloat(curr.total.replace('$', '').replace(',', ''));
+                return acc + (isNaN(num) ? 0 : num);
+            }, 0);
+            document.getElementById('stat-total-compras').innerText = '$' + sumCompras.toLocaleString('en-US', {minimumFractionDigits: 2});
+        }
+
+        // Render Charts with Chart.js
+        function renderCharts() {
+            // Bar Chart
+            const ctxBar = document.getElementById('barChart').getContext('2d');
+            if (barChartInstance) barChartInstance.destroy();
+            
+            barChartInstance = new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio (Actual)'],
+                    datasets: [
+                        {
+                            label: 'Ventas ($)',
+                            data: [42000, 48000, 53000, 49000, 61000, 74500],
+                            backgroundColor: '#FF69B4',
+                            borderRadius: 8
+                        },
+                        {
+                            label: 'Compras Insumos ($)',
+                            data: [21000, 24000, 26000, 23000, 28000, 34400],
+                            backgroundColor: '#5C4033',
+                            borderRadius: 8
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#FCE7F3' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+
+            // Pie Chart
+            const ctxPie = document.getElementById('pieChart').getContext('2d');
+            if (pieChartInstance) pieChartInstance.destroy();
+
+            pieChartInstance = new Chart(ctxPie, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Glaseadas Clásicas', 'Rellenas Chocolate', 'Donas Gourmet', 'Mini Donas Festivas', 'Especiales Temporada'],
+                    datasets: [{
+                        data: [35, 25, 20, 12, 8],
+                        backgroundColor: [
+                            '#FF69B4',
+                            '#5C4033',
+                            '#FFB6C1',
+                            '#D2B48C',
+                            '#FF1493'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#FFF8DC'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+                    }
+                }
+            });
+        }
+
+        // Modal Management
+        function openModal(type) {
+            document.getElementById('form-type').value = type;
+            const modalTitle = document.getElementById('modal-title');
+            const fieldsContainer = document.getElementById('modal-fields');
+            fieldsContainer.innerHTML = '';
+
+            if (type === 'venta') {
+                modalTitle.innerText = 'Registrar Nueva Venta';
+                fieldsContainer.innerHTML = `
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Cliente / Punto de Venta</label>
+                        <input type="text" id="v-cliente" required class="w-full px-4 py-2 rounded-xl border border-pink-200 focus:outline-none focus:ring-2 focus:ring-donutPink" placeholder="Ej. Cafetería del Parque">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Producto</label>
+                        <input type="text" id="v-producto" required class="w-full px-4 py-2 rounded-xl border border-pink-200 focus:outline-none focus:ring-2 focus:ring-donutPink" placeholder="Ej. Donas Rellenas de Fresa">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Cantidad</label>
+                            <input type="text" id="v-cantidad" required class="w-full px-4 py-2 rounded-xl border border-pink-200 focus:outline-none focus:ring-2 focus:ring-donutPink" placeholder="Ej. 100 piezas">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Total ($)</label>
+                            <input type="text" id="v-total" required class="w-full px-4 py-2 rounded-xl border border-pink-200 focus:outline-none focus:ring-2 focus:ring-donutPink" placeholder="Ej. $1,500.00">
+                        </div>
+                    </div>
+                `;
+            } else if (type === 'compra') {
+                modalTitle.innerText = 'Registrar Nueva Compra de Insumos';
+                fieldsContainer.innerHTML = `
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Insumo / Material</label>
+                        <input type="text" id="c-insumo" required class="w-full px-4 py-2 rounded-xl border border-pink-200 focus:outline-none focus:ring-2 focus:ring-donutPink" placeholder="Ej. Azúcar Glass (Sacos 25kg)">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Proveedor</label>
+                        <input type="text" id="c-proveedor" required class="w-full px-4 py-2 rounded-xl border border-pink-200 focus:outline-none focus:ring-2 focus:ring-donutPink" placeholder="Ej. Molinos del Norte S.A.">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Cantidad</label>
+                            <input type="text" id="c-cantidad" required class="w-full px-4 py-2 rounded-xl border border-pink-200 focus:outline-none focus:ring-2 focus:ring-donutPink" placeholder="Ej. 10 sacos">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Costo Total ($)</label>
+                            <input type="text" id="c-total" required class="w-full px-4 py-2 rounded-xl border border-pink-200 focus:outline-none focus:ring-2 focus:ring-donutPink" placeholder="Ej. $4,500.00">
+                        </div>
+                    </div>
+                `;
+            } else if (type === 'proveedor') {
+                modalTitle.innerText = 'Agregar Nuevo Proveedor';
+                fieldsContainer.innerHTML = `
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Nombre de la Empresa</label>
+                        <input type="text" id="p-empresa" required class="w-full px-4 py-2 rounded-xl border border-pink-200 focus:outline-none focus:ring-2 focus:ring-donutPink" placeholder="Ej. Suministros Pasteleros S.A.">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Insumo Suministrado</label>
+                        <input type="text" id="p-insumo" required class="w-full px-4 py-2 rounded-xl border border-pink-200 focus:outline-none focus:ring-2 focus:ring-donutPink" placeholder="Ej. Grasas y Aceites Vegetales">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Teléfono de Contacto</label>
+                            <input type="text" id="p-contacto" required class="w-full px-4 py-2 rounded-xl border border-pink-200 focus:outline-none focus:ring-2 focus:ring-donutPink" placeholder="Ej. +52 55 0000 1111">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Calificación</label>
+                            <select id="p-calificacion" class="w-full px-4 py-2 rounded-xl border border-pink-200 focus:outline-none focus:ring-2 focus:ring-donutPink">
+                                <option value="★★★★★">★★★★★ (Excelente)</option>
+                                <option value="★★★★☆">★★★★☆ (Muy Bueno)</option>
+                                <option value="★★★☆☆">★★★☆☆ (Regular)</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+            }
+
+            document.getElementById('record-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('record-modal').classList.add('hidden');
+        }
+
+        // Handle Form Submissions
+        function handleFormSubmit(event) {
+            event.preventDefault();
+            const type = document.getElementById('form-type').value;
+            const today = new Date().toISOString().split('T')[0];
+
+            if (type === 'venta') {
+                const newVenta = {
+                    id: 'V-10' + (state.ventas.length + 1),
+                    cliente: document.getElementById('v-cliente').value,
+                    producto: document.getElementById('v-producto').value,
+                    cantidad: document.getElementById('v-cantidad').value,
+                    total: document.getElementById('v-total').value,
+                    fecha: today
+                };
+                state.ventas.unshift(newVenta);
+                showNotification('Venta registrada correctamente.');
+            } else if (type === 'compra') {
+                const newCompra = {
+                    id: 'C-50' + (state.compras.length + 1),
+                    insumo: document.getElementById('c-insumo').value,
+                    proveedor: document.getElementById('c-proveedor').value,
+                    cantidad: document.getElementById('c-cantidad').value,
+                    total: document.getElementById('c-total').value,
+                    fecha: today
+                };
+                state.compras.unshift(newCompra);
+                showNotification('Compra registrada correctamente.');
+            } else if (type === 'proveedor') {
+                const newProv = {
+                    id: 'P-0' + (state.proveedores.length + 1),
+                    empresa: document.getElementById('p-empresa').value,
+                    insumo: document.getElementById('p-insumo').value,
+                    contacto: document.getElementById('p-contacto').value,
+                    calificacion: document.getElementById('p-calificacion').value
+                };
+                state.proveedores.unshift(newProv);
+                showNotification('Proveedor agregado al directorio.');
+            }
+
+            closeModal();
+            renderTables();
+        }
+
+        // Delete item helper
+        function deleteItem(category, index) {
+            if (confirm('¿Estás seguro de eliminar este registro?')) {
+                state[category].splice(index, 1);
+                renderTables();
+                showNotification('Registro eliminado.');
+            }
+        }
+
+        function showNotification(msg) {
+            const notif = document.getElementById('notification');
+            document.getElementById('notification-text').innerText = msg;
+            notif.classList.remove('hidden');
+            setTimeout(() => {
+                notif.classList.add('hidden');
+            }, 4000);
+        }
+
+        // Initialize App on Load
+        window.onload = function() {
+            renderTables();
+            renderCharts();
+        };
+    </script>
+</body>
+</html>
